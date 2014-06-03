@@ -1,0 +1,11 @@
+/sys/class/backlight/*/max_brightness,4000,5000
+/sys/class/backlight/*/max_brightness,4000,4500
+/sys/class/backlight/*/max_brightness,4000,
+/sys/class/backlight/*/max_brightness,,5000
+/sys/class/lcd/*/acl_control,4000,5000
+/sys/class/lcd/*/lcd_power, ,
+/dev/video0, ,
+/dev/fb0, ,
+/sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:01/path,\_SB_.PCI0.P0P1,
+/sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:01/path,pci0.p0p1,
+/sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:01/path,,
