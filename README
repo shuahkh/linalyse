@@ -1,0 +1,165 @@
+linalyse
+========
+
+Linux platform analysis tool
+
+checks/tests for required KABI and KAPI to support user-space
+on a Linux platform.
+
+NAME:
+  linalyse:
+	a tool can be used to check if Linux platform has the required
+	KABI and KAPI to support the user-space. This tool checks if
+	files (sysfs, dev, proc etc.) specified in the input file exist
+	on the system and validates the data in those files against the
+	specified in the input file.
+
+	Further more, it can be used to check if the system has the
+	required packages and libraries are installed on the system.
+	These options take input file that lists the required packages
+	or libraries.
+
+	It might be necessary to run this as root in some cases.
+
+USAGE:
+
+	-c | --check-files platform.txt
+		check if files in platform.txt are present on the system
+		and validate the data in those files against the specified.
+	-p | --check-pkgs pkgs.txt
+		check if specified packages are present on the system.
+	-l | --check-libs libs
+		check if specified libraries are present on the system.
+	-h | --help Print help message and exit.
+	-v | --version Print version and exit.
+	-V | --verbose Print messages per failure and summary results.
+
+INPUT FILE FORMAT:
+
+-c option
+	takes an input file with list of required files. Each line
+	specifies a file and data range. It checks if files exist.
+	If file is a regular files, it will check the contents.
+
+	Each line in the input file has comma separated fields.i e.g:
+
+	/sys/class/backlight/*/max_brightness,4000,5000
+
+	The above will expand to find all max_brightness file.
+	Data is compared to be within the range: 4000 < data < 5000
+
+	/sys/class/backlight/*/max_brightness,4000,
+
+	The above will expand to find all max_brightness file.
+	Data in the file is matched to 4000.
+
+	If file contains a string as in the example:
+	/sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:01/path
+
+	Using input as follows, will match the string to the data in the
+	file on the system.
+
+	/sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:01/path,\_SB_.PCI0.P0P1,
+
+	Sample input:
+
+	/sys/class/backlight/*/max_brightness,4000,5000
+	/sys/class/backlight/*/max_brightness,4000,4500
+	/sys/class/backlight/*/max_brightness,4000,
+	/sys/class/backlight/*/max_brightness,,5000
+	/sys/class/lcd/*/acl_control,4000,5000
+	/sys/class/lcd/*/lcd_power, ,
+	/dev/video0, ,
+	/dev/fb0, ,
+	/sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:01/path,\_SB_.PCI0.P0P1,
+	/sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:01/path,pci0.p0p1,
+	/sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:01/path,,
+
+	Sample Output:
+
+	Check Platform Results:
+System is missing required kernel files specified in ../platform.txt
+	/sys/class/lcd/*/acl_control
+	/sys/class/lcd/*/lcd_power
+Some required kernel files in ../platform.txt don't have data to check
+	/sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:01/path
+Some required kernel files specified in ../platform.txt have invalid data
+	/sys/class/backlight/acpi_video0/max_brightness
+	/sys/class/backlight/acpi_video0/max_brightness
+	/sys/class/backlight/intel_backlight/max_brightness
+	/sys/class/backlight/acpi_video0/max_brightness
+	/sys/class/backlight/intel_backlight/max_brightness
+	/sys/class/backlight/acpi_video0/max_brightness
+	/sys/class/backlight/intel_backlight/max_brightness
+	/sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:01/path
+
+-p option
+	takes an input file with list of required packages. e.g:
+
+	libdrm
+	libsysfs
+
+	It will check if the specified packages are installed on
+	the system.
+
+	Sample Input:
+
+	libdrm
+	libsysfs
+	libfoo
+
+	Sample Output:
+
+	System is missing required pkgs specified in ../pkgs.txt
+		libfoo
+
+-l option
+	takes an input file with list of required libraries. e.g:
+
+	fi1236_drv.so
+	tda8425_drv.so
+	tda9885_drv.so
+	libdrm.so.2
+
+	It will check if the specified libraries are installed on
+	the system.
+
+	Sample Input:
+
+	fi1236_drv.so
+	tda8425_drv.so
+	tda9885_drv.so
+	libdrm.so.2
+	libfoo.so.2
+
+	System is missing required libraries specified in ../libs.txt
+		libfoo.so.2
+
+Verbose option will print messages for each missing files/package/library.
+In the case of files with invalid data, it will include the data found and
+the data specified in the input file. If input file didn't specify data, it
+will alert the user of that fact.
+
+USE CASES:
+
+1. Users can ensure all the kernel files (sys,dev, etc.), packages,
+   and libraries they need are present on a Linux platform either after
+   a fresh install and/or upgrade. It also checks data in the kernel
+   files against what the expected data to ensure the sysfs files contain
+   valid data.
+
+2. Tizen BSP vendors can ensure all the OAL kernel files (sys,dev etc.)
+   are present on a tizen platform. It also checks data in the kernel
+   files against what the expected data to ensure the sysfs files contain
+   valid data. In addition to that it can be used to check whether or not
+   the packages and libraries necessary to support Tizen user-space are
+   present on the platform.
+
+PLANNED ENHANCEMENTS:
+
+1. Add capability to test user specified features and capabilities.
+   drm, v4l2, sensor, input sub-system, sound, and communication
+   (3G, LTE etc.).
+2. Add capability to generate input files.
+
+Contributions are accepted gladly.
