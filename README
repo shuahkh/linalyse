@@ -144,9 +144,9 @@ USE CASES:
 
 1. Users can ensure all the kernel files (sys,dev, etc.), packages,
    and libraries they need are present on a Linux platform either after
-   a fresh install and/or upgrade. It also checks data in the kernel
-   files against what the expected data to ensure the sysfs files contain
-   valid data.
+   a fresh install or upgrade or after installing a new kernel. It also
+   checks data in the kernel files against what the expected data to
+   ensure the sysfs files contain valid data.
 
 2. Tizen BSP vendors can ensure all the OAL kernel files (sys,dev etc.)
    are present on a tizen platform. It also checks data in the kernel
