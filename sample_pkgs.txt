@@ -1,3 +1,5 @@
 libdrm
 libsysfs
 libfoo
+xkbcomp
+dbus-python
