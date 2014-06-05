@@ -22,6 +22,7 @@ VERSION=1.0
 EXIT_CODE_0=0
 EXIT_CODE_1=1
 Verbose=0
+verbose_info="Please use -V | --verbose option for more information."
 
 # main
 main()
@@ -212,7 +213,11 @@ else
 fi
 if [ $no_data -ne 0 ]; then
 	echo -e "Some required kernel files in $1 don't have data to check"
-	printf -- '\t%s\n' "${nd_files[@]}"
+	if [[ $Verbose -eq 1 ]]; then
+		printf -- '\t%s\n' "${nd_files[@]}"
+	else
+		echo -e $verbose_info
+	fi
 fi
 if [ $match_fail -ne 0 ]; then
 	echo -e "Some required kernel files specified in $1 have invalid data"
@@ -226,21 +231,61 @@ check_pkgs()
 
 flines=`cat $1`
 fail=0
+bad_format=0
+req_fail=0
+rms_pkgs=()
+ms_fail=0
 ms_pkgs=()
+bad_pkgs=()
 echo "$0: Start packages check ...."
 for line in $flines ; do
-	if [ $(pkg-config --cflags $line 2>&1 > /dev/null | grep "not found" | wc -l) -ne 0 ]; then
-		fail=1
+	if [[ "$line" =~ "/" ]]  && [[ "$line" =~ "," ]]; then
 		if [[ $Verbose -eq 1 ]]; then
-		echo -e "\t Required package $line is missing."
+		echo -e "Incorrect format for package names in $1"
 		fi
-		ms_pkgs+=($line)
+		fail=1
+		bad_format=1
+		bad_pkgs+=($line)
+	else
+		result=`pkg-config --cflags $line 2>&1 > /dev/null`
+		if [[ "$result" =~ "not" ]]; then
+			if [[ "$result" =~ "required" ]]; then
+				if [[ $Verbose -eq 1 ]]; then
+				echo -e "\t $result"
+				fi
+				fail=1
+				req_fail=1
+				rms_pkgs+=($line)
+			else
+				if [[ $Verbose -eq 1 ]]; then
+				echo -e "\t Required package $line is missing."
+				fi
+				fail=1
+				ms_fail=1
+				ms_pkgs+=($line)
+			fi
+		fi
 	fi
 done
 
 if [ $fail -ne 0 ]; then
-	echo -e "System is missing required pkgs specified in $1"
-	printf -- '\t%s\n' "${ms_pkgs[@]}"
+	if [ $ms_fail -ne 0 ]; then
+		echo -e "System is missing required pkgs specified in $1"
+		printf -- '\t%s\n' "${ms_pkgs[@]}"
+	fi
+	if [ $bad_format -ne 0 ]; then
+		echo -e "Incorrect format for package names in $1"
+		if [[ $Verbose -eq 1 ]]; then
+			printf -- '\t%s\n' "${bad_pkgs[@]}"
+		else
+			echo -e $verbose_info
+		fi
+	fi
+	if [ $req_fail -ne 0 ]; then
+		echo -e "System is missing required pkg's depencies specified in $1"
+		printf -- '\t%s\n' "${rms_pkgs[@]}"
+		echo -e $verbose_info
+	fi
 else
 	echo -e "System has the required pkgs specified in $1"
 fi
@@ -252,17 +297,27 @@ check_libs()
 
 flines=`cat $1`
 fail=0
+bad_format=0
 ms_libs=()
+bad_libs=()
 echo "$0: Start libraries check /usr/lib and /lib ...."
 for line in $flines ; do
-	if [ $(find /usr/lib -name $line | wc -l) -eq 0 ]; then
-		if [ $(find /lib -name $line | wc -l) -eq 0 ]; then
-			fail=1
-			if [[ $Verbose -eq 1 ]]; then
-			echo -e "\t Required library $line is missing"
+	if [[ "$line" =~ ".so" ]]; then
+		if [ $(find /usr/lib -name $line | wc -l) -eq 0 ]; then
+			if [ $(find /lib -name $line | wc -l) -eq 0 ]; then
+				fail=1
+				if [[ $Verbose -eq 1 ]]; then
+				echo -e "\t Required library $line is missing"
+				fi
+				ms_libs+=($line)
 			fi
-			ms_libs+=($line)
 		fi
+	else
+		if [[ $Verbose -eq 1 ]]; then
+		echo -e "\t Skipping non-library $line"
+		fi
+		bad_libs+=($line)
+		bad_format=1
 	fi
 done
 
@@ -270,9 +325,17 @@ if [ $fail -ne 0 ]; then
 	echo -e "System is missing required libraries specified in $1"
 	printf -- '\t%s\n' "${ms_libs[@]}"
 else
-	echo -e "System has the required libraries specified in $1"
+	if [ $bad_format -ne 0 ]; then
+		echo -e "Non-libraries specified in $1"
+		if [[ $Verbose -eq 1 ]]; then
+			printf -- '\t%s\n' "${bad_libs[@]}"
+		else
+			echo -e $verbose_info
+		fi
+	else
+		echo -e "System has the required libraries specified in $1"
+	fi
 fi
-
 }
 
 main "$@"
