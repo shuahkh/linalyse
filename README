@@ -8,16 +8,15 @@ on a Linux platform.
 
 NAME:
   linalyse:
-	a tool can be used to check if Linux platform has the required
-	KABI and KAPI to support the user-space. This tool checks if
-	files (sysfs, dev, proc etc.) specified in the input file exist
-	on the system and validates the data in those files against the
-	specified in the input file.
+	checks if target platform can support user specified KABI and
+	KAPI required to run user-space.
 
-	Further more, it can be used to check if the system has the
-	required packages and libraries are installed on the system.
-	These options take input file that lists the required packages
-	or libraries.
+	checks if user specified sysfs, dev, proc files exist on the
+	platform and validates the data in those files against the
+	expected reference data specified in the user input file. 
+
+	checks if user specified packages and libraries are installed
+	on the target platform.
 
 	It might be necessary to run this as root in some cases.
 
@@ -28,7 +27,7 @@ USAGE:
 		and validate the data in those files against the specified.
 	-p | --check-pkgs pkgs.txt
 		check if specified packages are present on the system.
-	-l | --check-libs libs
+	-l | --check-libs libs.txt
 		check if specified libraries are present on the system.
 	-h | --help Print help message and exit.
 	-v | --version Print version and exit.
@@ -41,7 +40,7 @@ INPUT FILE FORMAT:
 	specifies a file and data range. It checks if files exist.
 	If file is a regular files, it will check the contents.
 
-	Each line in the input file has comma separated fields.i e.g:
+	Each line in the input file has comma separated fields. e.g:
 
 	/sys/class/backlight/*/max_brightness,4000,5000
 

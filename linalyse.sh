@@ -108,13 +108,13 @@ exit 0
 usage ()
 {
 
-echo "Usage: $0 -[c,p,h,v,V] <platform.txt>"
+echo "Usage: $0 -[c,p,h,v,V] <platform.txt> <pkgs.txt> <libs.txt>"
 echo -e "\t -c | --check-files platform.txt"
 echo -e "\t \t check if files in platform.txt are present on the system"
 echo -e "\t \t and validate the data in those files against the specified"
 echo -e "\t -p | --check-pkgs pkgs.txt"
 echo -e "\t \t check if specified packages are present on the system"
-echo -e "\t -l | --check-libs libs"
+echo -e "\t -l | --check-libs libs.txt"
 echo -e "\t \t check if specified libraries are present on the system"
 echo -e "\t -h | --help Print help message and exit"
 echo -e "\t -v | --version Print version and exit"
