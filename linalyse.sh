@@ -11,18 +11,19 @@
 # packages and libraries are installed on the system. These options take
 # input file that lists the required packages/libraries.
 #
-# Author: Shuah Khan <shuah.kh@samsung.com>
+# Author: Shuah Khan <shuah.kh@osg.samsung.com>
 # Copyright (C) 2014 Samsung Electronics Co., Ltd.
 #
 # This software may be freely redistributed under the terms of the GNU
 # General Public License (GPLv2).
 
-VERSION=1.0
+VERSION=2.0
 
 EXIT_CODE_0=0
 EXIT_CODE_1=1
 Verbose=0
 verbose_info="Please use -V | --verbose option for more information."
+REF_FILE="tizen_ref.txt"
 
 # main
 main()
@@ -34,7 +35,7 @@ then
 fi
 
 # Parse args
-args=`getopt -q -n "$0" -o Vvhc:p:l: --long verbose,version,help,check-files:,check-pkgs:,check-libs: -- "$@"`
+args=`getopt -q -n "$0" -o Vvhc:g:p:l: --long verbose,version,help,check-files:,generate:,check-pkgs:,check-libs: -- "$@"`
 
 # Check for input and print usage
 if [ $? -ne 0 ]; then
@@ -52,6 +53,21 @@ do
 			usage $EXIT_CODE_1
 		else
 			check_platform $2
+			exit 0
+		fi
+	else
+		usage $EXIT_CODE_1
+	fi
+	;;
+
+	-g|--generate)
+	if [ -n "$2" ]; then
+		if [[ -f $2 ]]; then
+			echo "File $2 exists!!\n"
+			usage $EXIT_CODE_1
+		else
+			generate_ref $2
+			echo "Generated:" $2
 			exit 0
 		fi
 	else
@@ -108,10 +124,12 @@ exit 0
 usage ()
 {
 
-echo "Usage: $0 -[c,p,h,v,V] <platform.txt> <pkgs.txt> <libs.txt>"
+echo "Usage: $0 -[c,g,p,h,v,V] <platform.txt> <ref.txt> <pkgs.txt> <libs.txt>"
 echo -e "\t -c | --check-files platform.txt"
 echo -e "\t \t check if files in platform.txt are present on the system"
 echo -e "\t \t and validate the data in those files against the specified"
+echo -e "\t -g | --generate platform_ref.txt"
+echo -e "\t \t generate reference file to use as input for -c option"
 echo -e "\t -p | --check-pkgs pkgs.txt"
 echo -e "\t \t check if specified packages are present on the system"
 echo -e "\t -l | --check-libs libs.txt"
@@ -124,10 +142,33 @@ exit $1
 
 }
 
+generate_ref()
+{
+
+w_files=()
+
+while IFS=, read -r -a input; do
+	# account for wildcard in filename
+	flines=`echo ${input[0]}`
+	val1=`echo ${input[1]}`
+	val2=`echo ${input[2]}`
+
+	for line in $flines ; do
+		if [[ -f $line ]]; then
+			w_files+=($input)
+		fi
+	done
+done < $REF_FILE
+
+printf -- '%s,,\n' "${w_files[@]}" >> $1
+
+}
+
 check_platform()
 {
 
 fail=0
+disable_data_check=1
 no_data=0
 match_fail=0
 matched=0
@@ -152,6 +193,9 @@ while IFS=, read -r -a input; do
 			ms_files+=($line)
 			fail=1
 		elif [[ -f $line ]]; then
+			if [[ $disable_data_check -eq 1 ]]; then
+				continue
+			fi
 			val=`cat $line`
 			if [ -n "`echo $val | sed 's/[0-9]//g'`" ]; then
 				if [[ "a$val1" = "a" ]] ; then
@@ -206,10 +250,10 @@ done < $1
 
 echo -e "Check Platform Results:"
 if [ $fail -ne 0 ]; then
-	echo -e "System is missing required kernel files specified in $1"
+	echo -e "FAIL: System is missing required kernel files specified in $1"
 	printf -- '\t%s\n' "${ms_files[@]}"
 else
-	echo -e "System has the required kernel files specified in $1"
+	echo -e "PASS: System has the required kernel files specified in $1"
 fi
 if [ $no_data -ne 0 ]; then
 	echo -e "Some required kernel files in $1 don't have data to check"
