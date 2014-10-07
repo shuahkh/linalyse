@@ -342,13 +342,18 @@ check_libs()
 flines=`cat $1`
 fail=0
 bad_format=0
+total_libs=0
+missed_libs=0
+find_libs=0
 ms_libs=()
 bad_libs=()
 echo "$0: Start libraries check /usr/lib and /lib ...."
 for line in $flines ; do
+	let total_libs+=1
 	if [[ "$line" =~ ".so" ]]; then
 		if [ $(find /usr/lib -name $line | wc -l) -eq 0 ]; then
 			if [ $(find /lib -name $line | wc -l) -eq 0 ]; then
+				let missed_libs+=1
 				fail=1
 				if [[ $Verbose -eq 1 ]]; then
 				echo -e "\t Required library $line is missing"
@@ -366,8 +371,14 @@ for line in $flines ; do
 done
 
 if [ $fail -ne 0 ]; then
-	echo -e "System is missing required libraries specified in $1"
-	printf -- '\t%s\n' "${ms_libs[@]}"
+	let find_libs=`expr $total_libs - $missed_libs`
+	echo -e "System is missing required libraries specified in $1\n"
+	echo -e "========================================================"
+	echo -e "Total: $total_libs, Find: $find_libs, Miss: $missed_libs"
+	echo -e "--------------------------------------------------------"
+	echo -e "[Missing]"
+	printf -- '\t- %s\n' "${ms_libs[@]}"
+	echo -e "========================================================"
 else
 	if [ $bad_format -ne 0 ]; then
 		echo -e "Non-libraries specified in $1"
