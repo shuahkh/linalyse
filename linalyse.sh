@@ -345,6 +345,7 @@ bad_format=0
 total_libs=0
 missed_libs=0
 find_libs=0
+non_libs=0
 ms_libs=()
 bad_libs=()
 echo "$0: Start libraries check /usr/lib and /lib ...."
@@ -365,6 +366,7 @@ for line in $flines ; do
 		if [[ $Verbose -eq 1 ]]; then
 		echo -e "\t Skipping non-library $line"
 		fi
+		let non_libs+=1
 		bad_libs+=($line)
 		bad_format=1
 	fi
@@ -374,7 +376,7 @@ if [ $fail -ne 0 ]; then
 	let find_libs=`expr $total_libs - $missed_libs`
 	echo -e "System is missing required libraries specified in $1\n"
 	echo -e "========================================================"
-	echo -e "Total: $total_libs, Find: $find_libs, Miss: $missed_libs"
+	echo -e "Total: $total_libs, Find: $find_libs, Miss: $missed_libs, Non library files: $non_libs"
 	echo -e "--------------------------------------------------------"
 	echo -e "[Missing]"
 	printf -- '\t- %s\n' "${ms_libs[@]}"
