@@ -275,14 +275,20 @@ check_pkgs()
 
 flines=`cat $1`
 fail=0
+total_pkg_cnt=0
+find_pkgs=0
 bad_format=0
 req_fail=0
 rms_pkgs=()
+rms_pkg_cnt=0
 ms_fail=0
 ms_pkgs=()
+ms_pkg_cnt=0
 bad_pkgs=()
+bad_pkg_cnt=0
 echo "$0: Start packages check ...."
 for line in $flines ; do
+	let total_pkg_cnt+=1
 	if [[ "$line" =~ "/" ]]  && [[ "$line" =~ "," ]]; then
 		if [[ $Verbose -eq 1 ]]; then
 		echo -e "Incorrect format for package names in $1"
@@ -290,6 +296,7 @@ for line in $flines ; do
 		fail=1
 		bad_format=1
 		bad_pkgs+=($line)
+		let bad_pkg_cnt+=1
 	else
 		result=`pkg-config --cflags $line 2>&1 > /dev/null`
 		if [[ "$result" =~ "not" ]]; then
@@ -300,6 +307,7 @@ for line in $flines ; do
 				fail=1
 				req_fail=1
 				rms_pkgs+=($line)
+				let rms_pkg_cnt+=1
 			else
 				if [[ $Verbose -eq 1 ]]; then
 				echo -e "\t Required package $line is missing."
@@ -307,16 +315,27 @@ for line in $flines ; do
 				fail=1
 				ms_fail=1
 				ms_pkgs+=($line)
+				let ms_pkg_cnt+=1
 			fi
 		fi
 	fi
 done
 
 if [ $fail -ne 0 ]; then
+	let find_pkgs=`expr $total_pkg_cnt - $ms_pkg_cnt - $rms_pkg_cnt`
+	echo -e "System is missing required packges specified in $1\n"
+	echo -e "========================================================"
+	echo -e "Total: $total_pkg_cnt, Find: $find_pkgs, Miss: $ms_pkg_cnt, Missing Required Packages: $rms_pkg_cnt"
+	echo -e "--------------------------------------------------------"
 	if [ $ms_fail -ne 0 ]; then
-		echo -e "System is missing required pkgs specified in $1"
+		echo -e "[Missing Packages]"
 		printf -- '\t%s\n' "${ms_pkgs[@]}"
 	fi
+	if [ $req_fail -ne 0 ]; then
+		echo -e "[Missing Required Packages]"
+		printf -- '\t%s\n' "${rms_pkgs[@]}"
+	fi
+	echo -e "========================================================"
 	if [ $bad_format -ne 0 ]; then
 		echo -e "Incorrect format for package names in $1"
 		if [[ $Verbose -eq 1 ]]; then
@@ -324,11 +343,6 @@ if [ $fail -ne 0 ]; then
 		else
 			echo -e $verbose_info
 		fi
-	fi
-	if [ $req_fail -ne 0 ]; then
-		echo -e "System is missing required pkg's depencies specified in $1"
-		printf -- '\t%s\n' "${rms_pkgs[@]}"
-		echo -e $verbose_info
 	fi
 else
 	echo -e "System has the required pkgs specified in $1"
