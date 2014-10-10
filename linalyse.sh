@@ -176,6 +176,10 @@ rfk="Required kernel file"
 ms_files=()
 nd_files=()
 mf_files=()
+total_cnt=0
+ms_cnt=0
+nd_cnt=0
+mf_cnt=0
 
 # split line into fields: filename,[val1],[val2]
 while IFS=, read -r -a input; do
@@ -185,6 +189,7 @@ while IFS=, read -r -a input; do
 	val1=`echo ${input[1]}`
 	val2=`echo ${input[2]}`
 
+	let total_cnt+=1
 	for line in $flines ; do
 		if [[ ! -e $line ]]; then
 			if [[ $Verbose -eq 1 ]]; then
@@ -192,6 +197,7 @@ while IFS=, read -r -a input; do
 			fi
 			ms_files+=($line)
 			fail=1
+			let ms_cnt+=1
 		elif [[ -f $line ]]; then
 			if [[ $disable_data_check -eq 1 ]]; then
 				continue
@@ -204,12 +210,14 @@ while IFS=, read -r -a input; do
 					fi
 					no_data=1
 					nd_files+=($line)
+					let nd_cnt+=1
 				elif [[ ! "$val" = "$val1" ]]; then
 					if [[ $Verbose -eq 1 ]]; then
 					echo -e "\t $rfk $line has data: $val - doesn't match the expected: $val1"
 					fi
 					match_fail=1
 					mf_files+=($line)
+					let mf_cnt+=1
 				fi
 			else
 				if [[ "a$val1" = "a" ]] && [[ "a$val2" = "a" ]]; then
@@ -218,6 +226,7 @@ while IFS=, read -r -a input; do
 					fi
 					no_data=1
 					nd_files+=($line)
+					let nd_cnt+=1
 				elif [[ "a$val1" = "a" ]]; then
 					if [[ ! $val = $val2 ]]; then
 						if [[ $Verbose -eq 1 ]]; then
@@ -225,6 +234,7 @@ while IFS=, read -r -a input; do
 						fi
 						match_fail=1
 						mf_files+=($line)
+					let mf_cnt+=1
 					fi
 				elif [[ "a$val2" = "a" ]]; then
 					if [[ ! $val = $val1 ]]; then
@@ -233,6 +243,7 @@ while IFS=, read -r -a input; do
 						fi
 						match_fail=1
 						mf_files+=($line)
+						let mf_cnt+=1
 					fi
 				elif [[ $val -ge $val1 ]] && [[ $val -le $val2 ]]; then
 					matched=1
@@ -242,6 +253,7 @@ while IFS=, read -r -a input; do
 					fi
 					match_fail=1
 					mf_files+=($line)
+					let mf_cnt+=1
 				fi
 			fi
 		fi
@@ -250,8 +262,16 @@ done < $1
 
 echo -e "Check Platform Results:"
 if [ $fail -ne 0 ]; then
-	echo -e "FAIL: System is missing required kernel files specified in $1"
-	printf -- '\t%s\n' "${ms_files[@]}"
+	let find_cnt=`expr $total_cnt - $ms_cnt`
+	echo -e "System is missing required system files specified in $1\n"
+	echo -e "========================================================"
+	echo -e "Total: $total_cnt, Find: $find_cnt, Miss: $ms_cnt"
+	echo -e "--------------------------------------------------------"
+	if [ $ms_cnt -ne 0 ]; then
+		echo -e "[Missing System Files]"
+		printf -- '\t%s\n' "${ms_files[@]}"
+	fi
+	echo -e "========================================================"
 else
 	echo -e "PASS: System has the required kernel files specified in $1"
 fi
