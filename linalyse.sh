@@ -11,7 +11,7 @@
 # packages and libraries are installed on the system. These options take
 # input file that lists the required packages/libraries.
 #
-# Author: Shuah Khan <shuah.kh@osg.samsung.com>
+# Author: Shuah Khan <shuah.kh@samsung.com>
 # Copyright (C) 2014 Samsung Electronics Co., Ltd.
 #
 # This software may be freely redistributed under the terms of the GNU
